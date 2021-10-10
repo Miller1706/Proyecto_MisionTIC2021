@@ -12,15 +12,15 @@ import {
 } from "reactstrap";
 
 const data = [
-  { codigo: 1, producto: "Gafas sol ", precio: 100.000, cantidad: 1, total: 100.000},
-  { codigo: 2, producto: "Gafas lente especial ", precio: 100.000, cantidad: 1, total: 100.000},
-  { codigo: 3, producto: "Gafas sencilla", precio: 100.000 , cantidad: 1, total: 100.000},
-  { codigo: 4, producto: "Gafas marco bambú", precio: 100.000, cantidad: 1, total: 100.000},
-  { codigo: 5, producto: "Gafas negras ", precio: 100.000, cantidad: 1, total: 100.000},
-  { codigo: 6, producto: "Gafas x", precio: 100.000, cantidad: 1, total: 100.000},
+  { codigo: 1, producto: "Gafas sol ", precio: 100.000, descripción: "Especial para los rayos uv"},
+  { codigo: 2, producto: "Gafas lente especial ", precio: 100.000, descripción: "Lente especial de lectura y descanso"},
+  { codigo: 3, producto: "Gafas sencilla", precio: 100.000 , descripción: "Comodidad y sencillez"},
+  { codigo: 4, producto: "Gafas marco bambú", precio: 100.000,descripción: "Material de bambú, mayor duración y ecologico" },
+  { codigo: 5, producto: "Gafas negras ", precio: 100.000,descripción:"Un color" },
+  { codigo: 6, producto: "LGafas x ", precio: 100.000, descripción: "Gafas con filtro especial" },
 ];
 
-class Ventas extends React.Component {
+class Productos extends React.Component {
   state = {
     data: data,
     modalActualizar: false,
@@ -29,8 +29,7 @@ class Ventas extends React.Component {
       codigo: "",
       producto: "",
       precio: "",
-      cantidad: "",
-      total:"",
+      descripción: "",
     },
   };
 
@@ -58,12 +57,11 @@ class Ventas extends React.Component {
   editar = (dato) => {
     var contador = 0;
     var arreglo = this.state.data;
-    arreglo.map((Registro) => {
-      if (dato.codigo == Registro.codigo) {
+    arreglo.map((registro) => {
+      if (dato.codigo == registro.codigo) {
         arreglo[contador].producto = dato.producto;
         arreglo[contador].precio = dato.precio;
-        arreglo[contador].cantidad = dato.cantidad;
-        arreglo[contador].total = dato.total;
+        arreglo[contador].descripción = dato.descripción;
 
       }
       contador++;
@@ -76,8 +74,8 @@ class Ventas extends React.Component {
     if (opcion == true) {
       var contador = 0;
       var arreglo = this.state.data;
-      arreglo.map((Registro) => {
-        if (dato.codigo == Registro.codigo) {
+      arreglo.map((registro) => {
+        if (dato.codigo == registro.codigo) {
           arreglo.splice(contador, 1);
         }
         contador++;
@@ -109,17 +107,16 @@ class Ventas extends React.Component {
       <>
         <Container>
         <br />
-          <Button color="success" onClick={()=>this.mostrarModalInsertar()}>Nueva venta</Button>
+          <Button color="success" onClick={()=>this.mostrarModalInsertar()}>Nuevo Producto</Button>
           <br />
           <br />
           <Table>
             <thead>
               <tr>
-                <th>Codigo</th>
+                <th>Código</th>
                 <th>Producto</th>
                 <th>Precio</th>
-                <th>Cantidad</th>
-                <th>Total</th>
+                <th>Descripción</th>
                 <th>Acción</th>
               </tr>
             </thead>
@@ -130,8 +127,7 @@ class Ventas extends React.Component {
                   <td>{dato.codigo}</td>
                   <td>{dato.producto}</td>
                   <td>{dato.precio}</td>
-                  <td>{dato.cantidad}</td>
-                  <td>{dato.total}</td>
+                  <td>{dato.descripción}</td>
 
                   <td>
                     <Button
@@ -169,7 +165,7 @@ class Ventas extends React.Component {
             
             <FormGroup>
               <label>
-                Producto: 
+                producto: 
               </label>
               <input
                 className="form-control"
@@ -182,42 +178,30 @@ class Ventas extends React.Component {
             
             <FormGroup>
               <label>
-                Precio: 
+                precio: 
               </label>
               <input
                 className="form-control"
                 name="precio"
                 type="text"
                 onChange={this.handleChange}
-                value={this.state.form.anime}// este anime qué?
-              />
-            </FormGroup>
-
-            <FormGroup>
-              <label>
-                Cantidad: 
-              </label>
-              <input
-                className="form-control"
-                name="cantidad"
-                type="text"
-                onChange={this.handleChange}
                 value={this.state.form.anime}
               />
             </FormGroup>
 
             <FormGroup>
               <label>
-                Total: 
+                descripción: 
               </label>
               <input
                 className="form-control"
-                name="total"
+                name="descripcion"
                 type="text"
                 onChange={this.handleChange}
                 value={this.state.form.anime}
               />
             </FormGroup>
+
           </ModalBody>
 
           <ModalFooter>
@@ -240,7 +224,7 @@ class Ventas extends React.Component {
 
         <Modal isOpen={this.state.modalInsertar}>
           <ModalHeader>
-           <div><h3>Insertar Venta</h3></div>
+           <div><h3>Insertar Producto</h3></div>
           </ModalHeader>
 
           <ModalBody>
@@ -284,27 +268,16 @@ class Ventas extends React.Component {
 
             <FormGroup>
               <label>
-                Cantidad: 
+                Descripción: 
               </label>
               <input
                 className="form-control"
-                name="cantidad"
+                name="descripcion"
                 type="text"
                 onChange={this.handleChange}
               />
             </FormGroup>
 
-            <FormGroup>
-              <label>
-                Total: 
-              </label>
-              <input
-                className="form-control"
-                name="total"
-                type="text"
-                onChange={this.handleChange}
-              />
-            </FormGroup>
           </ModalBody>
 
           <ModalFooter>
@@ -326,4 +299,4 @@ class Ventas extends React.Component {
     );
   }
 }
-export default Ventas;
+export default Productos;
