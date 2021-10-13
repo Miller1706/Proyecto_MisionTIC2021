@@ -1,5 +1,6 @@
 import React from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
+import fireDb from "../firebase"
 import {
   Table,
   Button,
@@ -11,95 +12,72 @@ import {
   ModalFooter,
 } from "reactstrap";
 
-const data = [
-  { codigo: 1, producto: "Gafas sol ", precio: 100.000, descripción: "Especial para los rayos uv"},
-  { codigo: 2, producto: "Gafas lente especial ", precio: 100.000, descripción: "Lente especial de lectura y descanso"},
-  { codigo: 3, producto: "Gafas sencilla", precio: 100.000 , descripción: "Comodidad y sencillez"},
-  { codigo: 4, producto: "Gafas marco bambú", precio: 100.000,descripción: "Material de bambú, mayor duración y ecologico" },
-  { codigo: 5, producto: "Gafas negras ", precio: 100.000,descripción:"Un color" },
-  { codigo: 6, producto: "LGafas x ", precio: 100.000, descripción: "Gafas con filtro especial" },
-];
 
 class Productos extends React.Component {
   state = {
-    data: data,
-    modalActualizar: false,
+    data: [],
+    modalEditar: false,
     modalInsertar: false,
     form: {
       codigo: "",
       producto: "",
       precio: "",
-      descripción: "",
+      descripcion: "",
     },
+    id:0
   };
-
-  mostrarModalActualizar = (dato) => {
-    this.setState({
-      form: dato,
-      modalActualizar: true,
-    });
-  };
-
-  cerrarModalActualizar = () => {
-    this.setState({ modalActualizar: false });
-  };
-
-  mostrarModalInsertar = () => {
-    this.setState({
-      modalInsertar: true,
-    });
-  };
-
-  cerrarModalInsertar = () => {
-    this.setState({ modalInsertar: false });
-  };
-
-  editar = (dato) => {
-    var contador = 0;
-    var arreglo = this.state.data;
-    arreglo.map((registro) => {
-      if (dato.codigo == registro.codigo) {
-        arreglo[contador].producto = dato.producto;
-        arreglo[contador].precio = dato.precio;
-        arreglo[contador].descripción = dato.descripción;
-
+  peticionGet = () => {
+    fireDb.child("productos").on("value", (producto) => {
+      if (producto.val() !== null) {
+        this.setState({ ...this.state.data, data: producto.val() });
+      } else {
+        this.setState({ data: [] });
       }
-      contador++;
     });
-    this.setState({ data: arreglo, modalActualizar: false });
   };
-
-  eliminar = (dato) => {
-    var opcion = window.confirm("Estás Seguro que deseas Eliminar el elemento "+dato.codigo);
-    if (opcion == true) {
-      var contador = 0;
-      var arreglo = this.state.data;
-      arreglo.map((registro) => {
-        if (dato.codigo == registro.codigo) {
-          arreglo.splice(contador, 1);
-        }
-        contador++;
+  peticionPost=()=>{
+    console.log(this.state.form)
+    fireDb.child("productos").push(this.state.form,
+      error=>{
+        if(error)console.log(error)
       });
-      this.setState({ data: arreglo, modalActualizar: false });
-    }
-  };
-
-  insertar= ()=>{
-    var valorNuevo= {...this.state.form};
-    valorNuevo.codigo=this.state.data.length+1;
-    var lista= this.state.data;
-    lista.push(valorNuevo);
-    this.setState({ modalInsertar: false, data: lista });
+      this.setState({modalInsertar: false});
   }
+  peticionPut=()=>{
+    fireDb.child(`productos/${this.state.id}`).set(
+      this.state.form,
+      error=>{
+        if(error)console.log(error)
+      });
+      this.setState({modalEditar: false});
+  }
+  peticionDelete=()=>{
+    if(window.confirm(`Estás seguro que deseas eliminar el producto ${this.state.form && this.state.form.codigo}?`))
+    {
+    fireDb.child(`productos/${this.state.id}`).remove(
+      error=>{
+        if(error)console.log(error)
+      });
+    }
+  }
+  handleChange=e=>{
+    this.setState({form:{
+      ...this.state.form,
+      [e.target.name]: e.target.value
+    }})
+    console.log(this.state.form);
+  }
+  seleccionarProducto=async(producto,id,caso)=>{
 
-  handleChange = (e) => {
-    this.setState({
-      form: {
-        ...this.state.form,
-        [e.target.name]: e.target.value,
-      },
-    });
-  };
+    await this.setState({form: producto, id: id});
+
+    (caso==="Editar")?this.setState({modalEditar: true}):
+    this.peticionDelete()
+
+  }
+  componentDidMount(){
+    this.peticionGet();
+  }
 
   render() {
     
@@ -107,10 +85,10 @@ class Productos extends React.Component {
       <>
         <Container>
         <br />
-          <Button color="success" onClick={()=>this.mostrarModalInsertar()}>Nuevo Producto</Button>
+          <Button color="success" onClick={()=>this.setState({modalInsertar: true})}>Nuevo Producto</Button>
           <br />
           <br />
-          <Table>
+          <Table className="table table-bordered">
             <thead>
               <tr>
                 <th>Código</th>
@@ -122,29 +100,25 @@ class Productos extends React.Component {
             </thead>
 
             <tbody>
-              {this.state.data.map((dato) => (
-                <tr key={dato.codigo}>
-                  <td>{dato.codigo}</td>
-                  <td>{dato.producto}</td>
-                  <td>{dato.precio}</td>
-                  <td>{dato.descripción}</td>
-
+            {Object.keys(this.state.data).map(i => {
+                return <tr key={i}>
+                  
+                  <td>{this.state.data[i].codigo}</td>
+                  <td>{this.state.data[i].producto}</td>
+                  <td>{this.state.data[i].precio}</td>
+                  <td>{this.state.data[i].descripcion}</td>
                   <td>
-                    <Button
-                      color="primary"
-                      onClick={() => this.mostrarModalActualizar(dato)}
-                    >
-                      Editar
-                    </Button>{" "}
-                    <Button color="danger" onClick={()=> this.eliminar(dato)}>Eliminar</Button>
+                    <Button color="primary" onClick={() => this.seleccionarProducto(this.state.data[i],i,'Editar')}>Editar</Button>{" "}
+                    <Button color="danger" onClick={()=> this.seleccionarProducto(this.state.data[i],i,'Eliminar')}>Eliminar</Button>
                   </td>
+
                 </tr>
-              ))}
+               })}
             </tbody>
           </Table>
         </Container>
 
-        <Modal isOpen={this.state.modalActualizar}>
+        <Modal isOpen={this.state.modalEditar}>
           <ModalHeader>
            <div><h3>Editar Registro</h3></div>
           </ModalHeader>
@@ -157,9 +131,9 @@ class Productos extends React.Component {
             
               <input
                 className="form-control"
-                readOnly
-                type="text"
-                value={this.state.form.codigo}
+                name="codigo"
+                type="number"
+                value={this.state.form && this.state.form.codigo}
               />
             </FormGroup>
             
@@ -172,7 +146,7 @@ class Productos extends React.Component {
                 name="producto"
                 type="text"
                 onChange={this.handleChange}
-                value={this.state.form.producto}
+                value={this.state.form && this.state.form.producto}
               />
             </FormGroup>
             
@@ -183,9 +157,9 @@ class Productos extends React.Component {
               <input
                 className="form-control"
                 name="precio"
-                type="text"
+                type="number"
                 onChange={this.handleChange}
-                value={this.state.form.anime}
+                value={this.state.form && this.state.form.precio}
               />
             </FormGroup>
 
@@ -198,7 +172,7 @@ class Productos extends React.Component {
                 name="descripcion"
                 type="text"
                 onChange={this.handleChange}
-                value={this.state.form.anime}
+                value={this.state.form && this.state.form.descripcion}
               />
             </FormGroup>
 
@@ -207,13 +181,13 @@ class Productos extends React.Component {
           <ModalFooter>
             <Button
               color="primary"
-              onClick={() => this.editar(this.state.form)}
+              onClick={() => this.peticionPut()}
             >
               Editar
             </Button>
             <Button
               color="danger"
-              onClick={() => this.cerrarModalActualizar()}
+              onClick={() => this.setState({modalEditar: false})}
             >
               Cancelar
             </Button>
@@ -235,9 +209,9 @@ class Productos extends React.Component {
               
               <input
                 className="form-control"
-                readOnly
-                type="text"
-                value={this.state.data.length+1}
+                name="codigo"
+                type="number"
+                onChange={this.handleChange}
               />
             </FormGroup>
             
@@ -260,7 +234,7 @@ class Productos extends React.Component {
               <input
                 className="form-control"
                 name="precio"
-                type="text"
+                type="number"
                 onChange={this.handleChange}
               />
             </FormGroup>
@@ -283,13 +257,13 @@ class Productos extends React.Component {
           <ModalFooter>
             <Button
               color="primary"
-              onClick={() => this.insertar()}
+              onClick={() => this.peticionPost()}
             >
               Insertar
             </Button>
             <Button
               className="btn btn-danger"
-              onClick={() => this.cerrarModalInsertar()}
+              onClick={() => this.setState({modalInsertar: false})}
             >
               Cancelar
             </Button>

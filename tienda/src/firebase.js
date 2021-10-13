@@ -4,7 +4,7 @@ import "firebase/compat/auth";
 import "firebase/compat/firestore";
 import 'firebase/compat/database';
 // Your web app's Firebase configuration
-const firebaseConfig = {
+var firebaseConfig = {
     apiKey: "AIzaSyCM9LNXsKe-H-fBgQbQnWb_Y9Oqdud3Ts8",
     authDomain: "tienda-11628.firebaseapp.com",
     projectId: "tienda-11628",

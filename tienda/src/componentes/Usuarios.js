@@ -1,5 +1,6 @@
 import React from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
+import fireDb from "../firebase"
 import {
   Table,
   Button,
@@ -11,112 +12,87 @@ import {
   ModalFooter,
 } from "reactstrap";
 
-const data = [
-  { id: 1, usuario: "Ana01 ", apellido: "Lopez", nombre: "Ana", correo: "ana01@gmail.com"},
-  { id: 2, usuario: "maria12 ", apellido: "Luna", nombre: "Maria", correo: "maria12@hotmail.com"},
-  { id: 3, usuario: "Kevin56", apellido: "Ruiz" , nombre: "Kevin", correo: "kevin56@gmail.com"},
-  { id: 4, usuario: "lola45", apellido: "Olivares",nombre: "Lola", correo:"lola45@gmail.com"  },
-  { id: 5, usuario: "Edward45 ", apellido: "Luna",nombre:"Edwar", correo:"edwar45@gmail.com" },
-  { id: 6, usuario: "Luis45 ", apellido: "Lugo", nombre: "Luis", correo:"luis45@outlook.com" },
-];
+
 
 class Usuarios extends React.Component {
   state = {
-    data: data,
-    modalActualizar: false,
-    modalInsertar: false,
+    data: [],
+    modalInsertar:false,
+    modalEditar: false,
     form: {
-      id: "",
-      usuario: "",
+      identificacion: "",
       apellido: "",
       nombre: "",
       correo:"",
     },
+    id:0
   };
-
-  mostrarModalActualizar = (dato) => {
-    this.setState({
-      form: dato,
-      modalActualizar: true,
-    });
-  };
-
-  cerrarModalActualizar = () => {
-    this.setState({ modalActualizar: false });
-  };
-
-  mostrarModalInsertar = () => {
-    this.setState({
-      modalInsertar: true,
-    });
-  };
-
-  cerrarModalInsertar = () => {
-    this.setState({ modalInsertar: false });
-  };
-
-  editar = (dato) => {
-    var contador = 0;
-    var arreglo = this.state.data;
-    arreglo.map((registro) => {
-      if (dato.id == registro.id) {
-        arreglo[contador].usuario = dato.usuario;
-        arreglo[contador].apellido = dato.apellido;
-        arreglo[contador].nombre = dato.nombre;
-        arreglo[contador].correo = dato.correo;
-
+  peticionGet = () => {
+    fireDb.child("usuarios").on("value", (usuario) => {
+      if (usuario.val() !== null) {
+        this.setState({ ...this.state.data, data: usuario.val() });
+      } else {
+        this.setState({ data: [] });
       }
-      contador++;
     });
-    this.setState({ data: arreglo, modalActualizar: false });
   };
-
-  eliminar = (dato) => {
-    var opcion = window.confirm("Estás Seguro que deseas Eliminar el elemento "+dato.id);
-    if (opcion == true) {
-      var contador = 0;
-      var arreglo = this.state.data;
-      arreglo.map((registro) => {
-        if (dato.id == registro.id) {
-          arreglo.splice(contador, 1);
-        }
-        contador++;
+  peticionPost=()=>{
+    console.log(this.state.form)
+    fireDb.child("usuarios").push(this.state.form,
+      error=>{
+        if(error)console.log(error)
       });
-      this.setState({ data: arreglo, modalActualizar: false });
-    }
-  };
-
-  insertar= ()=>{
-    var valorNuevo= {...this.state.form};
-    valorNuevo.id=this.state.data.length+1;
-    var lista= this.state.data;
-    lista.push(valorNuevo);
-    this.setState({ modalInsertar: false, data: lista });
+      this.setState({modalInsertar: false});
   }
+  peticionPut=()=>{
+    fireDb.child(`usuarios/${this.state.id}`).set(
+      this.state.form,
+      error=>{
+        if(error)console.log(error)
+      });
+      this.setState({modalEditar: false});
+  }
+  peticionDelete=()=>{
+    if(window.confirm(`Estás seguro que deseas eliminar el usuario ${this.state.form && this.state.form.identificacion}?`))
+    {
+    fireDb.child(`usuarios/${this.state.id}`).remove(
+      error=>{
+        if(error)console.log(error)
+      });
+    }
+  }
+  handleChange=e=>{
+    this.setState({form:{
+      ...this.state.form,
+      [e.target.name]: e.target.value
+    }})
+    console.log(this.state.form);
+  }
+  seleccionarUsuario=async(usuario,id,caso)=>{
 
-  handleChange = (e) => {
-    this.setState({
-      form: {
-        ...this.state.form,
-        [e.target.name]: e.target.value,
-      },
-    });
-  };
+    await this.setState({form: usuario, id: id});
 
+    (caso==="Editar")?this.setState({modalEditar: true}):
+    this.peticionDelete()
+
+  }
+  componentDidMount(){
+    this.peticionGet();
+  }
   render() {
     
     return (
       <>
         <Container>
         <br />
-          <Button color="success" onClick={()=>this.mostrarModalInsertar()}>Nuevo Usuario</Button>
+          <Button color="success" onClick={()=>this.setState({modalInsertar: true})}>Nuevo Usuario</Button>
           <br />
           <br />
-          <Table>
+          <Table className="table table-bordered">
             <thead>
               <tr>
-                <th>ID</th>
-                <th>Usuario</th>
+                
+                <th>Identificacion</th>
                 <th>Apellido</th>
                 <th>Nombre</th>
                 <th>Correo</th>
@@ -125,58 +101,42 @@ class Usuarios extends React.Component {
             </thead>
 
             <tbody>
-              {this.state.data.map((dato) => (
-                <tr key={dato.id}>
-                  <td>{dato.id}</td>
-                  <td>{dato.usuario}</td>
-                  <td>{dato.apellido}</td>
-                  <td>{dato.nombre}</td>
-                  <td>{dato.correo}</td>
-
+              {Object.keys(this.state.data).map(i => {
+                return <tr key={i}>
+                  
+                  <td>{this.state.data[i].identificacion}</td>
+                  <td>{this.state.data[i].apellido}</td>
+                  <td>{this.state.data[i].nombre}</td>
+                  <td>{this.state.data[i].correo}</td>
                   <td>
-                    <Button
-                      color="primary"
-                      onClick={() => this.mostrarModalActualizar(dato)}
-                    >
-                      Editar
-                    </Button>{" "}
-                    <Button color="danger" onClick={()=> this.eliminar(dato)}>Eliminar</Button>
+                    <Button color="primary" onClick={() => this.seleccionarUsuario(this.state.data[i],i,'Editar')}>Editar</Button>{" "}
+                    <Button color="danger" onClick={()=> this.seleccionarUsuario(this.state.data[i],i,'Eliminar')}>Eliminar</Button>
                   </td>
+
                 </tr>
-              ))}
+               })}
             </tbody>
           </Table>
         </Container>
 
-        <Modal isOpen={this.state.modalActualizar}>
+        <Modal isOpen={this.state.modalEditar}>
           <ModalHeader>
            <div><h3>Editar Registro</h3></div>
           </ModalHeader>
 
           <ModalBody>
-            <FormGroup>
-              <label>
-               Id:
-              </label>
-            
-              <input
-                className="form-control"
-                readOnly
-                type="text"
-                value={this.state.form.id}
-              />
-            </FormGroup>
             
             <FormGroup>
               <label>
-                Usuario: 
+              Identificacion: 
               </label>
               <input
                 className="form-control"
-                name="usuario"
-                type="text"
+                name="identificacion"
+                type="number"
                 onChange={this.handleChange}
-                value={this.state.form.usuario}
+                value={this.state.form && this.state.form.identificacion}
+                
               />
             </FormGroup>
             
@@ -189,7 +149,7 @@ class Usuarios extends React.Component {
                 name="apellido"
                 type="text"
                 onChange={this.handleChange}
-                value={this.state.form.anime}
+                value={this.state.form && this.state.form.apellido}
               />
             </FormGroup>
 
@@ -199,10 +159,10 @@ class Usuarios extends React.Component {
               </label>
               <input
                 className="form-control"
-                name="apellido"
+                name="nombre"
                 type="text"
                 onChange={this.handleChange}
-                value={this.state.form.anime}
+                value={this.state.form && this.state.form.nombre}
               />
             </FormGroup>
 
@@ -215,7 +175,7 @@ class Usuarios extends React.Component {
                 name="correo"
                 type="text"
                 onChange={this.handleChange}
-                value={this.state.form.anime}
+                value={this.state.form && this.state.form.correo}
               />
             </FormGroup>
           </ModalBody>
@@ -223,13 +183,13 @@ class Usuarios extends React.Component {
           <ModalFooter>
             <Button
               color="primary"
-              onClick={() => this.editar(this.state.form)}
+              onClick={() => this.peticionPut()}
             >
               Editar
             </Button>
             <Button
               color="danger"
-              onClick={() => this.cerrarModalActualizar()}
+              onClick={() => this.setState({modalEditar: false})}
             >
               Cancelar
             </Button>
@@ -244,27 +204,15 @@ class Usuarios extends React.Component {
           </ModalHeader>
 
           <ModalBody>
-            <FormGroup>
-              <label>
-                Id: 
-              </label>
-              
-              <input
-                className="form-control"
-                readOnly
-                type="text"
-                value={this.state.data.length+1}
-              />
-            </FormGroup>
             
             <FormGroup>
               <label>
-                Usuario: 
+              Identificacion: 
               </label>
               <input
                 className="form-control"
-                name="usuario"
-                type="text"
+                name="identificacion"
+                type="number"
                 onChange={this.handleChange}
               />
             </FormGroup>
@@ -310,13 +258,13 @@ class Usuarios extends React.Component {
           <ModalFooter>
             <Button
               color="primary"
-              onClick={() => this.insertar()}
+              onClick={() => this.peticionPost()}
             >
               Insertar
             </Button>
             <Button
               className="btn btn-danger"
-              onClick={() => this.cerrarModalInsertar()}
+              onClick={() => this.setState({modalInsertar: false})}
             >
               Cancelar
             </Button>
